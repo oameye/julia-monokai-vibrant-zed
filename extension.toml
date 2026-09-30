@@ -1,0 +1,7 @@
+id = "julia-monokai-vibrant"
+name = "Julia Monokai Vibrant"
+version = "0.1.0"
+schema_version = 1
+authors = ["Orjan Ameye"]
+description = "Monokai Vibrant port for Zed, tuned for Julia (from CameronBieganek/julia-color-themes)."
+repository = "https://github.com/oameye/julia-monokai-vibrant-zed"
