@@ -47,26 +47,50 @@ Zed command palette -> `zed: install dev extension` -> select this directory.
 ## Color fidelity notes
 
 VS Code uses TextMate scopes, Zed uses Tree-sitter captures, so a port is a
-mapping, not a copy. The mapping was checked capture-by-capture against
-`JuliaEditorSupport/zed-julia` (`languages/julia/highlights.scm`) and Zed's
-resolution rule (a capture uses the longest dot-prefix key in `syntax`).
-Verified mappings for Julia:
+mapping, not a copy. The mapping was verified token-by-token for a real Julia
+file (`src/plotting.jl`) with a simulator that replays Zed's engine rules
+against the installed `zed-julia` queries (`tree-sitter query` for captures,
+last-pattern-wins for overlaps, longest dot-prefix key for resolution —
+see `crates/language/src/buffer.rs::compute_chunk_highlights` and
+`crates/syntax_theme/src/syntax_theme.rs::highlight_id`).
+Re-run it with `python3 /tmp/opencode/sim.py`. Verified mappings for Julia:
 
 - definitions purple `#AE81FF`, calls green `#81F900`, macros cyan `#00AAFF`
 - `using`/`import`/`export`/`module` green `#81F900` (`keyword.import`)
 - keywords red italic `#FF3F4F` (incl. `in`/`isa`/`where` via `keyword.operator`)
-- strings yellow `#FFD945`, symbols `#FD5FF0`, docstrings/comments gray italic
-- `true`/`false`/`nothing`/`missing` blue `#00AAFF`, numbers pink `#E373CE`
+- strings yellow `#FFD945`, symbols `#FD5FF0`, `#` comments gray italic
+- docstrings (`"""`) yellow upright via `comment.doc`, matching VS Code where
+  docstrings are plain strings. Trade-off: `///` / `/** */` doc comments in
+  other languages also render yellow instead of gray.
+- `true`/`false`/`nothing`/`missing` blue `#00AAFF`, numbers blue `#00AAFF`
+  (the Julia override group beats the generic pink `constant.numeric`)
 - types cyan `#00AAFF`, defined struct names blue `#61afef`
-- locals/params: white `#f8f8f0`, params orange italic `#FF9700`
+- locals/`const` names white `#f8f8f0` (the grammar's later assignment rule
+  correctly overrides `constant`), params orange italic `#FF9700`
 - brackets orange `#FF8F3F` (author's `meta.bracket` rule), `,`/`;`/`.`/`$` white
+- JSON keys teal `#56b6c2` (`property.json_key`), character literals pink,
+  bare `escape` captures yellow, `obj.method()` calls green
 
-Known structural deviations (cannot be 1:1):
+Python files get best-effort styling through the same keys (booleans,
+numbers, strings, `True`/`False`/`None`, decorators aside, all verified
+against the source's Python section). Known Python deviations: plain and
+method calls render purple via `function` (VS Code: green; definitions need
+the purple), `import`/`from` render red italic (VS Code: green), `self`
+renders red italic (VS Code: magenta), `def` params render white
+(VS Code: light orange — upstream python queries capture no parameter).
 
-- `const X = ...` names: white in VS Code (scoped as variables), cyan here if
-  the `const_statement` query matches; currently renders white via the
-  assignment rule.
-- All brackets are orange here; VS Code only oranges `meta.bracket` scopes.
+Known structural deviations (grammar-determined, not fixable in a theme):
+
+- `colorant"..."` prefixes render cyan (`function.macro` wins inside the
+  prefixed-literal pattern); VS Code shows green.
+- Constructor-like calls (`Theme(...)`) render green like all calls;
+  VS Code shows them teal.
+- `&&` / `||` / `!` render red (`operator`); VS Code shows them purple
+  (`keyword.operator.boolean`) — one capture covers all operators.
+- `'a'` character literals render yellow (`@string`); VS Code shows blue.
+- Markdown block quotes and `---` separators have no Zed capture
+  (render default white); VS Code shows them green / magenta.
+- All brackets render orange here; VS Code only oranges `meta.bracket` scopes.
 - Terminal ANSI colors are derived from the token palette; the VS Code source
   defines no terminal colors.
 - `element.background` uses `#1d1f23` (input/dropdown bg); border uses
