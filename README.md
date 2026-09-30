@@ -44,6 +44,36 @@ Zed command palette -> `zed: install dev extension` -> select this directory.
    [Developing Extensions](https://zed.dev/docs/extensions/developing-extensions).
 3. Bump `version` in `extension.toml` for each release.
 
+## Color fidelity notes
+
+VS Code uses TextMate scopes, Zed uses Tree-sitter captures, so a port is a
+mapping, not a copy. The mapping was checked capture-by-capture against
+`JuliaEditorSupport/zed-julia` (`languages/julia/highlights.scm`) and Zed's
+resolution rule (a capture uses the longest dot-prefix key in `syntax`).
+Verified mappings for Julia:
+
+- definitions purple `#AE81FF`, calls green `#81F900`, macros cyan `#00AAFF`
+- `using`/`import`/`export`/`module` green `#81F900` (`keyword.import`)
+- keywords red italic `#FF3F4F` (incl. `in`/`isa`/`where` via `keyword.operator`)
+- strings yellow `#FFD945`, symbols `#FD5FF0`, docstrings/comments gray italic
+- `true`/`false`/`nothing`/`missing` blue `#00AAFF`, numbers pink `#E373CE`
+- types cyan `#00AAFF`, defined struct names blue `#61afef`
+- locals/params: white `#f8f8f0`, params orange italic `#FF9700`
+- brackets orange `#FF8F3F` (author's `meta.bracket` rule), `,`/`;`/`.`/`$` white
+
+Known structural deviations (cannot be 1:1):
+
+- `const X = ...` names: white in VS Code (scoped as variables), cyan here if
+  the `const_statement` query matches; currently renders white via the
+  assignment rule.
+- All brackets are orange here; VS Code only oranges `meta.bracket` scopes.
+- Terminal ANSI colors are derived from the token palette; the VS Code source
+  defines no terminal colors.
+- `element.background` uses `#1d1f23` (input/dropdown bg); border uses
+  `#181A1F` (source literally says `#181A11`, an apparent typo for `#1A1F`).
+- Zed has no theme keys for selection color, scrollbar-active, titlebar text,
+  or diff-insert background; closest available keys are mapped.
+
 ## Sources / attribution
 
 - VS Code colors + Julia/Python token colors:
